@@ -1,0 +1,35 @@
+h1 #{ wpdata.title }
+
+ul
+  li 
+    h2 Metadata:
+
+    table
+      each val, name in wpdata
+        tr
+          td
+            strong
+              = name
+          td
+            = val
+
+
+  li 
+    h2 Authors:
+    
+    - var once = true
+    table
+      each author in wpauthors
+        if once
+          - once = false
+          tr
+            each val, name in author
+              th
+                = name
+          
+        tr
+          each val, name in author
+            td
+              = val
+
+

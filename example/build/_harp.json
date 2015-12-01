@@ -1,0 +1,45 @@
+{
+  "globals": {
+    "wpdata": {
+      "title": "Theme Unit Test Data",
+      "link": "http://wpthemetestdata.wordpress.com",
+      "description": "Just another WordPress website with a purposefully really long description",
+      "pubDate": "Tue, 02 Sep 2014 17:16:26 +0000",
+      "language": "en",
+      "wp:wxr_version": "1.2",
+      "wp:base_site_url": "http://wordpress.com/",
+      "wp:base_blog_url": "http://wpthemetestdata.wordpress.com",
+      "generator": "http://wordpress.com/"
+    },
+    "wpauthors": [
+      {
+        "login": "themedemos",
+        "email": "themeshaperwp+demos@gmail.com",
+        "display_name": "Theme Buster",
+        "first_name": "",
+        "last_name": ""
+      },
+      {
+        "login": "chipbennett",
+        "email": "chip@chipbennett.net",
+        "display_name": "Chip Bennett",
+        "first_name": "",
+        "last_name": ""
+      },
+      {
+        "login": "lance",
+        "email": "lance@automattic.com",
+        "display_name": "Lance Willett",
+        "first_name": "",
+        "last_name": ""
+      },
+      {
+        "login": "emiluzelac",
+        "email": "emil@uzelac.me",
+        "display_name": "Emil Uzelac",
+        "first_name": "",
+        "last_name": ""
+      }
+    ]
+  }
+}

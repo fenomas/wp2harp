@@ -1,0 +1,24 @@
+{
+  "name": "wp2harp",
+  "version": "0.1.0",
+  "description": "Convert a wordpress XML dump to barebones harp.js",
+  "scripts": {
+    "test": "rm -rf example/build/*; node wp2harp.js example/theme-unit-test-data.xml example/build/",
+    "test2": "rm -rf example/build/*; node wp2harp.js ref/andyhall.wordpress.2015-11-29.xml example/build/",
+    "serve": "harp server example/build --port 8080"
+  },
+  "bin": {
+    "wp2harp": "./wp2harp.js"
+  },
+  "keywords": [
+    "wordpress",
+    "xml",
+    "harp",
+    "harp.js"
+  ],
+  "author": "Andy Hall",
+  "license": "ISC",
+  "devDependencies": {
+    "xml2js": "^0.4.15"
+  }
+}
