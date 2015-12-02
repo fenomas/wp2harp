@@ -1,0 +1,1 @@
+This post has many categories.

@@ -1,0 +1,1 @@
+This is the post content. It should be displayed in place of the user-defined excerpt in single-page views.

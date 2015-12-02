@@ -1,9 +1,8 @@
-h1 #{ wpdata.title }
+h1 Title: #{ wpdata.title }
 
 ul
   li 
     h2 Metadata:
-
     table
       each val, name in wpdata
         tr
@@ -14,22 +13,29 @@ ul
             = val
 
 
-  li 
-    h2 Authors:
-    
-    - var once = true
-    table
-      each author in wpauthors
-        if once
-          - once = false
+  if wpauthors.length
+    li 
+      h2 Authors:
+      - var once = true
+      table
+        each author in wpauthors
+          if once
+            - once = false
+            tr
+              each val, name in author
+                th
+                  = name
           tr
             each val, name in author
-              th
-                = name
-          
-        tr
-          each val, name in author
-            td
-              = val
+              td
+                = val
+
+  li 
+    h2 Posts:
+    ul
+      each post in public.posts._data
+        li
+          a(href="posts/#{post.slug}") #{post.title}
+
 
 

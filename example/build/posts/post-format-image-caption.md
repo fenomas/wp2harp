@@ -1,0 +1,1 @@
+[caption id="attachment_754" align="alignnone" width="604"]<a href="http://wpthemetestdata.files.wordpress.com/2008/06/100_5478.jpg"><img class="wp-image-754 size-large" src="http://wpthemetestdata.files.wordpress.com/2008/06/100_5478.jpg?w=604" alt="Bell on Wharf" width="604" height="453" /></a> Bell on wharf in San Francisco[/caption]
