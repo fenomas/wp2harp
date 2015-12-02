@@ -17,7 +17,7 @@
     "harp.js"
   ],
   "author": "Andy Hall",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "xml2js": "^0.4.15"
   }
