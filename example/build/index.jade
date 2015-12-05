@@ -1,10 +1,10 @@
-h1 Title: #{ wpdata.title }
+h1 Title: #{ wp_data.title }
 
 ul
   li 
     h2 Metadata:
     table
-      each val, name in wpdata
+      each val, name in wp_data
         tr
           td
             strong
@@ -13,12 +13,12 @@ ul
             = val
 
 
-  if wpauthors.length
+  if wp_authors.length
     li 
       h2 Authors:
       - var once = true
       table
-        each author in wpauthors
+        each author in wp_authors
           if once
             - once = false
             tr
@@ -30,12 +30,24 @@ ul
               td
                 = val
 
-  li 
-    h2 Posts:
-    ul
-      each post in public.posts._data
-        li
-          a(href="posts/#{post.slug}") #{post.title}
-
-
-
+  - var posts = []
+  - var pages = []
+  each post in public._data.wp_posts
+    - if (post['wp:post_type'] === 'post') posts.push(post)
+    - if (post['wp:post_type'] === 'page') pages.push(post)
+  
+  if pages.length
+    li
+      h2 Pages:
+      ul
+        each post in pages
+          li
+            a(href="posts/#{post.slug}") #{post.title}
+  
+  if posts.length
+    li
+      h2 Posts:
+      ul
+        each post in posts
+          li
+            a(href="posts/#{post.slug}") #{post.title}

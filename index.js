@@ -17,20 +17,32 @@ var parser = require('xml2js').parseString
 function doEverything(channel, folder) {
 	// process XML channel into a big data object
 	var dat = buildAllData(channel)
+	// this looks at post metadata link values, converts /?p=123 links, etc.
+	conformPaths(dat)
 	
-	// write out site globals and base folder templates
-	writeGlobals(dat, folder, '_harp.json')
+	// write out site globals and base folder content
+	writeSiteMeta(dat, folder, '_harp.json')
+	writePostMeta(dat, folder, '_data.json')
 	copyFile('templates/index.jade', folder, 'index.jade')
 	copyFile('templates/_layout.jade', folder, '_layout.jade')
 	
-	// write posts to posts folder
-	var postDir = makeFolder(folder, 'posts')
-	writePosts(dat, postDir, '_data.json')
-	copyFile('templates/posts/_layout.jade', postDir, '_layout.jade')
+	var partialDir = makeFolder(folder, '_partials')
+	copyFile('templates/_partials/post.jade', partialDir, 'post.jade')
+	copyFile('templates/_partials/comments.jade', partialDir, 'comments.jade')
+	
+	// write out post information
+	writePosts(dat, folder)
+	
+	// comments
+	var commentDir = makeFolder(folder, 'comments')
+	writeComments(dat, commentDir)
 	
 	// copy more static stuff
 	var cssDir = makeFolder(folder, 'css')
 	copyFile('templates/css/style.less', cssDir, 'style.less')
+	
+	// write out a JSON file listing incoming links user will likely need to handle
+	writeLinkInfo(dat, folder, '_linkInfo.json')
 }
 
 
@@ -44,6 +56,7 @@ function buildAllData(channel) {
 		authors: [],
 		postMeta: {},
 		postContent: {},
+		postComments: {},
 		pages: {},
 		navItems: {},
 		attachments: {},
@@ -88,6 +101,7 @@ function processItems(dat, items) {
 	for (var i = 0; i < items.length; i++) {
 		var item = items[i]
 		var obj = {}
+		var commentList = []
 		var type = nodeContent(item['wp:post_type']) || '(unspecified)'
 		var slug = nodeContent(item['wp:post_name'])
 			|| nodeContent(item['wp:post_id'])
@@ -112,7 +126,6 @@ function processItems(dat, items) {
 				// figure this out later
 				obj['wp:postmeta'] = cleanUpMetaObject(item[key])
 			} else if (key === 'wp:comment') {
-				var comments = obj['wp:comment'] = []
 				for (var j = 0; j < item[key].length; j++) {
 					var commentObj = item[key][j]
 					var co = {}
@@ -123,10 +136,10 @@ function processItems(dat, items) {
 							co[s] = nodeContent(commentObj[s])
 						}
 					}
-					comments.push(co)
+					commentList.push(co)
 				}
 			} else if (key === 'content:encoded') {
-				if (type === 'post') {
+				if (type === 'post' || type === 'page') {
 					// store encoded content for separate processing
 					dat.postContent[slug] = item[key]
 				}
@@ -136,9 +149,11 @@ function processItems(dat, items) {
 			}
 		}
 		switch (type) {
-			case 'post': dat.postMeta[slug] = obj
-				break;
-			case 'page': dat.pages[slug] = obj
+			case 'page': //dat.pages[slug] = obj
+			case 'post': 
+				dat.postMeta[slug] = obj
+				dat.postComments[slug] = commentList
+				// break;
 				break;
 			case 'attachment': dat.attachments[slug] = obj
 				break;
@@ -161,6 +176,33 @@ function cleanUpMetaObject(node, b) {
 }
 
 
+// This runs through all posts to figure out what subfolder they should live in
+//    /?p=123  -style posts will convert to:  /posts/123
+
+function conformPaths(dat) {
+	var err = []
+	var base = dat.metadata.link
+	// conform base link not to end with a slash
+	if (/\/$/.test(base)) base = base.substring(0, base.length-1)
+	// loop through posts, adding anything we can't deal with to err[]
+	for (var slug in dat.postMeta) {
+		var link = dat.postMeta[slug].link
+		if (/\?p=(\d+)$/.test(link)) { err.push(slug); continue }
+		if (link.indexOf(base) !== 0) { err.push(slug); continue }
+		var tail = link.substring(base.length)
+		if (/\/$/.test(tail)) tail = tail.substring(0, tail.length-1)
+		var folders = tail.split('/')
+		folders.pop() // that should have been the slug or post ID
+		if (folders[0]==='') folders.shift()
+		if (folders.length===0) { err.push(slug); continue }
+		dat.postMeta[slug].wp_link_path = folders.join('/')
+	}
+	// run through errors
+	err.forEach(function(slug){
+		dat.postMeta[slug].wp_link_path = ''
+	})
+}
+
 
 /*
  *		If you want to process the body of each post 
@@ -178,30 +220,91 @@ function processPostContent(s) {
  * 
 */
 
-function writeGlobals(dat, folder, filename) {
+function writeSiteMeta(dat, folder, filename) {
+	// overall site metadata
 	var out = {
 		globals: {
-			wpdata: dat.metadata,
-			wpauthors: dat.authors
+			wp_data: dat.metadata,
+			wp_authors: dat.authors,
 		}
 	}
 	writeFile(folder, filename, JSON.stringify(out, null, 2))
 }
 
 
-
-function writePosts(dat, folder, filename) {
-	// posts metadata
-	var out = dat.postMeta
+function writePostMeta(dat, folder, filename) {
+	// metadata for all posts
+	var out = {
+		wp_posts: dat.postMeta,
+	}
 	writeFile(folder, filename, JSON.stringify(out, null, 2))
-	
-	// post files
-	for (var s in dat.postContent) {
-		var content = processPostContent(dat.postContent[s])
-		writeFile(folder, s + '.md', content)
+}
+
+
+
+function writePosts(dat, folder) {
+	// write out actual post and page files, relative to the root folder
+	for (var slug in dat.postContent) {
+		var sub = getPostSubfolder(folder)//, dat.postMeta[slug].wp_link_path)
+		var content = processPostContent(dat.postContent[slug])
+		writeFile(sub, slug + '.md', content)
 	}
 }
 
+
+function getPostSubfolder(root, subfolderString) {
+	// settle for now on always returning /posts/ for post subfolders
+	if (!_alreadyMade.posts) {
+		_alreadyMade.posts = makeFolder(root, 'posts')
+	}
+	return _alreadyMade.posts
+	
+	// if you want posts placed in subfolders according to wordpress links
+	// (e.g. /2015/12/foo) then below is an implementation that should work.
+	// subfolderString is like:  foo/bar/baz   - no leading or tailing slash
+	var m = _alreadyMade['/' + subfolderString]
+	if (m) return m
+	var farr = subfolderString.split('/')
+	var loc = root
+	var path = '/'
+	for (var i=0; i<farr.length; i++) {
+		var f = farr[i]
+		var here = path+f
+		if (!_alreadyMade[here]) _alreadyMade[here] = makeFolder(loc, f)
+		loc = _alreadyMade[here]
+		path = here
+	}
+	return loc
+}
+var _alreadyMade = {}
+
+
+
+
+
+function writeComments(dat, folder) {
+	// write comments into their own JSON, assuming people probably want to 
+	// do something like convert them to disqus, not just serve them statically
+	var out = dat.postComments
+	writeFile(folder, '_data.json', JSON.stringify(out, null, 2))
+}
+
+
+function writeLinkInfo(dat, folder, filename) {
+	// write a list of links that are probably broken, for the user to consider handling
+	var base = dat.metadata.link
+	var out = {}
+	for (var slug in dat.postMeta) {
+		var link = dat.postMeta[slug].link || ''
+		var tail = link.substring(base.length)
+		if (/\/$/.test(tail)) tail = tail.substring(0, tail.length-1)
+		out[slug] = {}
+		out[slug].converted_path = '/posts/' + slug + '.md'
+		out[slug].wordpress_link = tail
+		out[slug].wordpress_pver = '/?p=' + dat.postMeta[slug]['wp:post_id']
+	}
+	writeFile(folder, filename, JSON.stringify(out, null, 2))
+}
 
 
 
@@ -224,6 +327,7 @@ module.exports = function (xmlFile, folder) {
 
 function writeFile(where, file, content) {
 	var outpath = path.join(where, file)
+	// console.log('fake write: '+outpath)
 	var stream = fs.createWriteStream(outpath)
 	// console.log('writing: ' + outpath)
 	stream.once('open', function (fd) {
@@ -234,6 +338,7 @@ function writeFile(where, file, content) {
 
 function makeFolder(where, foldername) {
 	var outpath = path.join(where, foldername)
+	// console.log('fake mkdir: ' + outpath)
 	fs.mkdirSync(outpath)
 	return outpath
 }

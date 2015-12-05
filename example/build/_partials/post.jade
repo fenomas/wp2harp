@@ -1,0 +1,26 @@
+h1 Post metadata
+
+table
+  each val, name in post
+    - if (name==='wp:comment') continue
+    tr
+      td
+        strong
+          = name
+        td
+          - if (name==='category' || name==='wp:postmeta')
+            table
+              each val2, name2 in val
+                tr
+                  td
+                    = name2
+                  td
+                    = val2
+          - else
+            = val
+        
+h1 Post content
+
+!= yield
+
+

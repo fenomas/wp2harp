@@ -1,6 +1,6 @@
 {
   "globals": {
-    "wpdata": {
+    "wp_data": {
       "title": "Theme Unit Test Data",
       "link": "http://wpthemetestdata.wordpress.com",
       "description": "Just another WordPress website with a purposefully really long description",
@@ -11,7 +11,7 @@
       "wp:base_blog_url": "http://wpthemetestdata.wordpress.com",
       "generator": "http://wordpress.com/"
     },
-    "wpauthors": [
+    "wp_authors": [
       {
         "login": "themedemos",
         "email": "themeshaperwp+demos@gmail.com",

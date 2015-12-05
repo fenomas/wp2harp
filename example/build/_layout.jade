@@ -1,8 +1,17 @@
 doctype
 html
   head
-    title #{ wpdata.title }
+    title #{ wp_data.title }
     meta(name="viewport", content="width=device-width, initial-scale=1.0")
     link(rel="stylesheet", href="/css/style.css")
   body
-    != yield
+    - if (current.source==='index' && current.path[0]==='index')
+      != yield
+    - else
+      - var slug = current.source
+      - var post = public._data.wp_posts[slug]
+      != partial("_partials/post", {post:post})
+      
+      - var comments = public.comments._data[slug]
+      - if (comments)
+        != partial("_partials/comments", {comments:comments})
